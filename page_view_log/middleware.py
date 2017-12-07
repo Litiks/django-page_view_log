@@ -3,10 +3,11 @@ import json
 import time
 from datetime import datetime
 from django.core.cache import cache
+from django.utils.deprecation import MiddlewareMixin
 
 from page_view_log.models import UserAgent, Url, ViewName, PageViewLog
 
-class PageViewLogMiddleware(object):
+class PageViewLogMiddleware(MiddlewareMixin, object):
     def process_request(self, request):
         request.pvl_stime = datetime.now()
         request.pvl_view_name = ''
@@ -43,7 +44,7 @@ class PageViewLogMiddleware(object):
         request.pvl_view_name = view_func.__name__
         return None
 
-    def process_response(self,request,response):
+    def process_response(self, request, response):
         if hasattr(request,'pvl_stime'):
             etime = datetime.now()
             gen_time = etime - request.pvl_stime
