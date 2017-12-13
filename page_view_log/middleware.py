@@ -3,7 +3,11 @@ import json
 import time
 from datetime import datetime
 from django.core.cache import cache
-from django.utils.deprecation import MiddlewareMixin
+try:
+    from django.utils.deprecation import MiddlewareMixin
+except ImportError:
+    class MiddlewareMixin(object):
+        pass
 
 from page_view_log.models import UserAgent, Url, ViewName, PageViewLog
 
