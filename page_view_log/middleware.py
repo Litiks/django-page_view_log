@@ -131,6 +131,10 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
 
         # we've finished processing this request, let's cache it in case any other thread is waiting for it.
         if hasattr(request,'pvl_uid'):
-            cache.set(request.pvl_uid + ":response", response, 10)
+            try:
+                cache.set(request.pvl_uid + ":response", response, 10)
+            except TypeError:
+                # some responses can't be pickled / cast to string. So we just fail gracefully
+                pass
             cache.delete(request.pvl_uid)      # this tells the other thread that we're done.
         return response
