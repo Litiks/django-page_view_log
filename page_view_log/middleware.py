@@ -26,7 +26,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             json.dumps(request.POST),
             request.is_ajax(),
             )
-        request.pvl_uid = hashlib.md5(mystr).hexdigest()
+        request.pvl_uid = hashlib.md5(mystr.encode('utf-8')).hexdigest()
 
         if cache.get(request.pvl_uid):
             stime = time.time()
@@ -70,7 +70,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
 
             # user_agent
             user_agent_string = request.META.get('HTTP_USER_AGENT')
-            user_agent_hash = hashlib.md5(user_agent_string).hexdigest()
+            user_agent_hash = hashlib.md5(user_agent_string.encode('utf-8')).hexdigest()
             cache_key = "pvl_%s" % user_agent_hash
             user_agent_id = cache.get(cache_key)
             if not user_agent_id:
@@ -84,7 +84,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
 
             # url
             url_string = request.META.get('PATH_INFO')
-            url_hash = hashlib.md5(url_string).hexdigest()
+            url_hash = hashlib.md5(url_string.encode('utf-8')).hexdigest()
             cache_key = "pvl_%s" % url_hash
             url_id = cache.get(cache_key)
             if not url_id:
@@ -103,7 +103,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
 
             # view_name
             view_name_string = getattr(request,'pvl_view_name','')
-            view_name_hash = hashlib.md5(view_name_string).hexdigest()
+            view_name_hash = hashlib.md5(view_name_string.encode('utf-8')).hexdigest()
             cache_key = "pvl_%s" % view_name_hash
             view_name_id = cache.get(cache_key)
             if not view_name_id:
