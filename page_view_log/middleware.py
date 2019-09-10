@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from builtins import object
 import hashlib
 import json
 import time
@@ -45,7 +44,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             cache.set(request.pvl_uid, "in progress", 60)
 
         return None
-        
+
     def process_view(self, request, view_func, *args, **kwargs):
         request.pvl_view_name = view_func.__name__
         return None
@@ -57,7 +56,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             gen_time = (gen_time.seconds*1000000) + gen_time.microseconds
         else:
             gen_time = None
-            
+
         try:
             id = int(request.user.id)
         except:
@@ -96,7 +95,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
                 else:
                     # create it
                     url = Url.objects.create(
-                        url_hash = url_hash, 
+                        url_hash = url_hash,
                         url_string = url_string,
                         )
                 url_id = url.id
