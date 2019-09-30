@@ -134,7 +134,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
         if hasattr(request,'pvl_uid'):
             try:
                 cache.set(request.pvl_uid + ":response", response, 10)
-            except TypeError:
+            except:
                 # some responses can't be pickled / cast to string. So we just fail gracefully
                 pass
             cache.delete(request.pvl_uid)      # this tells the other thread that we're done.
