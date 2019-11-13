@@ -10,22 +10,31 @@ class UserAgent(models.Model):
     user_agent_hash = models.CharField(max_length=32, db_index=True)
     user_agent_string = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.user_agent_hash
+
+    def __unicode__(self):
+        return self.__str__()
 
 class Url(models.Model):
     url_hash = models.CharField(max_length=32, db_index=True)
     url_string = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s" % self.url_string[:30]
+
+    def __unicode__(self):
+        return self.__str__()
 
 class ViewName(models.Model):
     view_name_hash = models.CharField(max_length=32, db_index=True)
     view_name_string = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s" % self.view_name_string[:30]
+
+    def __unicode__(self):
+        return self.__str__()
 
 class PageViewLog(models.Model):
     datetime = models.DateTimeField(auto_now_add=True)
