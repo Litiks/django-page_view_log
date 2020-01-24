@@ -80,7 +80,7 @@ class PageViewLogAdmin(admin.ModelAdmin):
 
             if not found_something:
                 # There are no results for this word. That's it. We're done.
-                return queryset.none()
+                return queryset.none(), False
 
             if len(words) == 1:
                 # We can skip a little work since there's only one search term.
