@@ -75,10 +75,15 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             user_agent_id = cache.get(cache_key)
             if not user_agent_id:
                 # get or create it from the db
-                user_agent, created = UserAgent.objects.get_or_create(
-                    user_agent_hash = user_agent_hash,
-                    defaults = {'user_agent_string': user_agent_string},
-                    )
+                user_agents = UserAgent.objects.filter(user_agent_hash=user_agent_hash)[:1]
+                if user_agents:
+                    user_agent = user_agents[0]
+                else:
+                    # create it
+                    user_agent = UserAgent.objects.create(
+                        user_agent_hash = user_agent_hash,
+                        user_agent_string = user_agent_string,
+                        )
                 user_agent_id = user_agent.id
                 cache.set(cache_key, user_agent_id)
 
@@ -89,7 +94,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             url_id = cache.get(cache_key)
             if not url_id:
                 # get or create it from the db
-                urls = Url.objects.filter(url_hash = url_hash)
+                urls = Url.objects.filter(url_hash = url_hash)[:1]
                 if urls:
                     url = urls[0]
                 else:
@@ -108,10 +113,15 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             view_name_id = cache.get(cache_key)
             if not view_name_id:
                 # get or create it from the db
-                view_name, created = ViewName.objects.get_or_create(
-                    view_name_hash = view_name_hash,
-                    defaults = {'view_name_string': view_name_string},
-                    )
+                view_names = ViewName.objects.filter(view_name_hash=view_name_hash)[:1]
+                if view_names:
+                    view_name = view_names[0]
+                else:
+                    # create it
+                    view_name = ViewName.objects.create(
+                        view_name_hash = view_name_hash,
+                        view_name_string = view_name_string,
+                        )
                 view_name_id = view_name.id
                 cache.set(cache_key, view_name_id)
 
