@@ -39,7 +39,7 @@ class StatusCodeFilter(admin.SimpleListFilter):
             return queryset.filter(status_code=v)
 
 class PageViewLogAdmin(admin.ModelAdmin):
-    search_fields = ('ip_address',)
+    # search_fields = ('ip_address',)
     ordering = ('-id',)
 
     list_display = ('datetime', 'user', 'status_code','url', 'view_name','gen_time_in_milliseconds','ip_address', 'user_agent')
@@ -50,25 +50,50 @@ class PageViewLogAdmin(admin.ModelAdmin):
             This method needs to return a tuple containing a queryset modified to implement the search, and a boolean indicating if the results may contain duplicates.
             see: https://docs.djangoproject.com/en/1.11/ref/contrib/admin/#django.contrib.admin.ModelAdmin.get_search_results
         """
-        if search_term:
+        words = search_term.split()
+        ids = set()
+        first_loop = True
+        for word in words:
+            qs = queryset
+            found_something = False
+
             # user__email
-            users = get_user_model().objects.filter(email__icontains=search_term)
+            users = get_user_model().objects.filter(email__icontains=word)
             user_ids = list(users.values_list('pk', flat=True))
             if user_ids:
-                queryset = queryset.filter(user_id__in=user_ids)
+                found_something = True
+                qs = qs.filter(user_id__in=user_ids)
 
             # url__url_string
-            urls = Url.objects.filter(url_string__icontains=search_term)
+            urls = Url.objects.filter(url_string__icontains=word)
             url_ids = list(urls.values_list('pk', flat=True))
             if url_ids:
-                queryset = queryset.filter(url_id__in=url_ids)
+                found_something = True
+                qs = qs.filter(url_id__in=url_ids)
 
             # view_name__view_name_string
-            view_names = ViewName.objects.filter(view_name_string__icontains=search_term)
+            view_names = ViewName.objects.filter(view_name_string__icontains=word)
             view_name_ids = list(view_names.values_list('pk', flat=True))
             if view_name_ids:
-                queryset = queryset.filter(view_name_id__in=view_name_ids)
+                found_something = True
+                qs = qs.filter(view_name_id__in=view_name_ids)
 
+            if not found_something:
+                # There are no results for this word. That's it. We're done.
+                return queryset.none()
+
+            if len(words) == 1:
+                # We can skip a little work since there's only one search term.
+                return qs, False
+
+            if first_loop:
+                ids.update(set(qs.values_list('pk', flat=True)))
+            else:
+                # we only keep results that match ALL search terms
+                ids.intersection_update(set(qs.values_list('pk', flat=True)))
+            first_loop = False
+
+        queryset = queryset.filter(id__in=ids)
         return queryset, False
 
 admin.site.register(UserAgent, UserAgentAdmin)
