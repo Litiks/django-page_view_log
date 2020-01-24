@@ -39,7 +39,7 @@ class StatusCodeFilter(admin.SimpleListFilter):
             return queryset.filter(status_code=v)
 
 class PageViewLogAdmin(admin.ModelAdmin):
-    # search_fields = ('ip_address',)
+    search_fields = ('ip_address',)
     ordering = ('-id',)
 
     list_display = ('datetime', 'user', 'status_code','url', 'view_name','gen_time_in_milliseconds','ip_address', 'user_agent')
