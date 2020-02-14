@@ -59,24 +59,34 @@ def cleanup_old_logs(**kwargs):
     # see: https://stackoverflow.com/a/36935536/341329
 
     qs = PageViewLog.objects.filter(datetime__lt=datetime.now()-timedelta(days=90))
-    qs._raw_delete(qs.db)
+    while True:
+        # we delete them 1000 at a time, to avoid needing a big lock on this table.
+        ids = qs.values_list('id', flat=True)[:1000]
+        ids = list(ids)
+        if not ids:
+            break
+        temp = PageViewLog.objects.filter(id__in=ids)
+        temp._raw_delete(temp.db)
 
     # remove orphan UserAgents
-    user_agent_ids = PageViewLog.objects.values_list('user_agent_id', flat=True).distinct()
-    user_agent_ids = list(user_agent_ids)
-    qs = UserAgent.objects.exclude(id__in=user_agent_ids)
+    all_ids = UserAgent.objects.all().values_list('id', flat=True)
+    used_ids = PageViewLog.objects.values_list('user_agent_id', flat=True).distinct()
+    ids_to_delete = set(all_ids) - set(used_ids)
+    qs = UserAgent.objects.filter(id__in=ids_to_delete)
     qs._raw_delete(qs.db)
 
     # remove orphan Urls
-    url_ids = PageViewLog.objects.values_list('url_id', flat=True).distinct()
-    url_ids = list(url_ids)
-    qs = Url.objects.exclude(id__in=url_ids)
+    all_ids = Url.objects.all().values_list('id', flat=True)
+    used_ids = PageViewLog.objects.values_list('url_id', flat=True).distinct()
+    ids_to_delete = set(all_ids) - set(used_ids)
+    qs = Url.objects.filter(id__in=ids_to_delete)
     qs._raw_delete(qs.db)
 
     # remove orphan ViewNames
-    view_name_ids = PageViewLog.objects.values_list('view_name_id', flat=True).distinct()
-    view_name_ids = list(view_name_ids)
-    qs = ViewName.objects.exclude(id__in=view_name_ids)
+    all_ids = ViewName.objects.all().values_list('id', flat=True)
+    used_ids = PageViewLog.objects.values_list('view_name_id', flat=True).distinct()
+    ids_to_delete = set(all_ids) - set(used_ids)
+    qs = ViewName.objects.filter(id__in=ids_to_delete)
     qs._raw_delete(qs.db)
 
 cron_daily.connect(cleanup_old_logs, dispatch_uid="cleanup_old_logs")

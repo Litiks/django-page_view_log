@@ -93,7 +93,8 @@ class PageViewLogAdmin(admin.ModelAdmin):
                 ids.intersection_update(set(qs.values_list('pk', flat=True)))
             first_loop = False
 
-        queryset = queryset.filter(id__in=ids)
+        if ids:
+            queryset = queryset.filter(id__in=ids)
         return queryset, False
 
 admin.site.register(UserAgent, UserAgentAdmin)
