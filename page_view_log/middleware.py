@@ -68,7 +68,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             if request.META.get('HTTP_CF_CONNECTING_IP'):
                 ip_address = request.META['HTTP_CF_CONNECTING_IP']
             if request.META.get('HTTP_X_FORWARDED_FOR'):
-                ip_address = request.META['HTTP_X_FORWARDED_FOR']
+                ip_address = request.META['HTTP_X_FORWARDED_FOR'].split(',')[0]
 
             # user_agent
             user_agent_string = request.META.get('HTTP_USER_AGENT')
