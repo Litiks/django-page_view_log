@@ -50,21 +50,21 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='pageviewlog',
             name='url',
-            field=models.ForeignKey(to='page_view_log.Url'),
+            field=models.ForeignKey(to='page_view_log.Url', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='pageviewlog',
             name='user',
-            field=models.ForeignKey(related_name='page_view_logs', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(related_name='page_view_logs', to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='pageviewlog',
             name='user_agent_hash',
-            field=models.ForeignKey(to='page_view_log.UserAgent'),
+            field=models.ForeignKey(to='page_view_log.UserAgent', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='pageviewlog',
             name='view_name',
-            field=models.ForeignKey(to='page_view_log.ViewName'),
+            field=models.ForeignKey(to='page_view_log.ViewName', on_delete=models.CASCADE),
         ),
     ]
