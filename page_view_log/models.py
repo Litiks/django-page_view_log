@@ -38,13 +38,13 @@ class ViewName(models.Model):
 
 class PageViewLog(models.Model):
     datetime = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='page_view_logs')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='page_view_logs', on_delete=models.CASCADE)
     session_key = models.CharField(max_length=32)
     ip_address = models.CharField(max_length=15)
-    user_agent = models.ForeignKey(UserAgent)
+    user_agent = models.ForeignKey(UserAgent, on_delete=models.CASCADE)
 
-    url = models.ForeignKey(Url)
-    view_name = models.ForeignKey(ViewName)
+    url = models.ForeignKey(Url, on_delete=models.CASCADE)
+    view_name = models.ForeignKey(ViewName, on_delete=models.CASCADE)
     gen_time = models.BigIntegerField(null=True, blank=True)
     status_code = models.IntegerField(null=True, blank=True)
 
