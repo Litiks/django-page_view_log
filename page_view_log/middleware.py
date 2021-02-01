@@ -71,7 +71,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
                 ip_address = request.META['HTTP_X_FORWARDED_FOR'].split(',')[0]
 
             # user_agent
-            user_agent_string = request.META.get('HTTP_USER_AGENT')
+            user_agent_string = request.META.get('HTTP_USER_AGENT') or ''
             user_agent_hash = hashlib.md5(user_agent_string.encode('utf-8')).hexdigest()
             cache_key = "pvl_%s" % user_agent_hash
             user_agent_id = cache.get(cache_key)
@@ -90,7 +90,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
                 cache.set(cache_key, user_agent_id)
 
             # url
-            url_string = request.META.get('PATH_INFO')
+            url_string = request.META.get('PATH_INFO') or ''
             url_hash = hashlib.md5(url_string.encode('utf-8')).hexdigest()
             cache_key = "pvl_%s" % url_hash
             url_id = cache.get(cache_key)
