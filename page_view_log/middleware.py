@@ -28,7 +28,10 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             )
         request.pvl_uid = hashlib.md5(mystr.encode('utf-8')).hexdigest()
 
-        if cache.get(request.pvl_uid):
+        # Try to call dibs on this work
+        dibsed = cache.add(request.pvl_uid, "in progress", 60)   # returns False if this key already has a value (someone else has dibsed it)
+        if not dibsed:
+            # Wait for the other process to complete.
             stime = time.time()
             while cache.get(request.pvl_uid):
                 time.sleep(.01)
@@ -38,10 +41,6 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
 
             # Don't bother processing. Just return the same response as the last request.
             return cache.get(request.pvl_uid + ":response")
-
-        else:
-            # Noone else is working on this. Let's dibs it.
-            cache.set(request.pvl_uid, "in progress", 60)
 
         return None
 
