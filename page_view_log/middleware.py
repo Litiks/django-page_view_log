@@ -138,8 +138,8 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
                     gen_time = gen_time,
                     status_code = response.status_code,
                     )
-            except:
-                pass
+            except Exception as e:
+                print("An error occurred saving the PageViewLog: '{}'".format(e))
 
         # we've finished processing this request, let's cache it in case any other thread is waiting for it.
         if hasattr(request,'pvl_uid'):
