@@ -54,6 +54,10 @@ class PageViewLog(models.Model):
     def gen_time_in_milliseconds(self):
         return "%sms" % (self.gen_time / 1000.0)
 
+    # In case we use these methods within admin as list_display fields: make them sortable.
+    gen_time_in_seconds.admin_order_field = 'gen_time'
+    gen_time_in_milliseconds.admin_order_field = 'gen_time'
+
 def cleanup_old_logs(**kwargs):
     # By default, django will need to load the results into memory in order to perform pre_delete and post_delete logic. We perform a 'raw' delete in order to expressly avoid this.
     # see: https://stackoverflow.com/a/36935536/341329

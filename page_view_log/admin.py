@@ -42,8 +42,11 @@ class PageViewLogAdmin(admin.ModelAdmin):
     search_fields = ('ip_address',)
     ordering = ('-id',)
 
-    list_display = ('datetime', 'user', 'status_code','url', 'view_name','gen_time_in_milliseconds','ip_address', 'user_agent')
+    list_display = ('datetime', 'user', 'status_code','url', 'view_name', 'gen_time_in_milliseconds', 'ip_address', 'user_agent')
     list_filter = (StatusCodeFilter,)
+
+    raw_id_fields = ('user', 'user_agent', 'url', 'view_name')
+    readonly_fields = ('gen_time_in_milliseconds', 'gen_time_in_seconds')
 
     def get_search_results(self, request, queryset, search_term):
         """ We do our own custom filtering; in an effort to eliminate table joins.
@@ -98,6 +101,6 @@ class PageViewLogAdmin(admin.ModelAdmin):
         return queryset, False
 
 admin.site.register(UserAgent, UserAgentAdmin)
-# admin.site.register(Url, UrlAdmin)
-# admin.site.register(ViewName, ViewNameAdmin)
+admin.site.register(Url, UrlAdmin)
+admin.site.register(ViewName, ViewNameAdmin)
 admin.site.register(PageViewLog, PageViewLogAdmin)
