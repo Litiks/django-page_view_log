@@ -3,7 +3,10 @@ import hashlib
 import json
 import time
 from datetime import datetime
+
 from django.core.cache import cache
+from django.utils import timezone
+
 try:
     from django.utils.deprecation import MiddlewareMixin
 except ImportError:
@@ -14,7 +17,7 @@ from page_view_log.models import UserAgent, Url, ViewName, PageViewLog
 
 class PageViewLogMiddleware(MiddlewareMixin, object):
     def process_request(self, request):
-        request.pvl_stime = datetime.now()
+        request.pvl_stime = timezone.now()
         request.pvl_view_name = ''
 
         # 'cache' the result of this page, to use as the result for any other page request that comes in during its generation.
@@ -50,7 +53,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
 
     def process_response(self, request, response):
         if hasattr(request,'pvl_stime'):
-            etime = datetime.now()
+            etime = timezone.now()
             gen_time = etime - request.pvl_stime
             gen_time = (gen_time.seconds*1000000) + gen_time.microseconds
         else:

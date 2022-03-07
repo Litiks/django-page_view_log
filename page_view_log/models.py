@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 from cron.signals import cron_daily
 
@@ -62,7 +63,7 @@ def cleanup_old_logs(**kwargs):
     # By default, django will need to load the results into memory in order to perform pre_delete and post_delete logic. We perform a 'raw' delete in order to expressly avoid this.
     # see: https://stackoverflow.com/a/36935536/341329
 
-    qs = PageViewLog.objects.filter(datetime__lt=datetime.now()-timedelta(days=90))
+    qs = PageViewLog.objects.filter(datetime__lt=timezone.now()-timedelta(days=90))
     while True:
         # we delete them 1000 at a time, to avoid needing a big lock on this table.
         ids = qs.values_list('id', flat=True)[:1000]
