@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 import hashlib
 import json
 import time
-from datetime import datetime
 
 from django.core.cache import cache
 from django.utils import timezone

@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.db import models
 from django.conf import settings
