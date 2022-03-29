@@ -36,7 +36,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             # Wait for the other process to complete.
             stime = time.time()
             while cache.get(request.pvl_uid):
-                time.sleep(.01)
+                time.sleep(0.2)
                 if time.time() > (stime + 60):
                     # it's been 60 seconds. time to give up on waiting and process as normal.
                     return None
