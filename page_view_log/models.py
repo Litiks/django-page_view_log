@@ -7,6 +7,9 @@ from django.utils import timezone
 
 from cron.signals import cron_daily
 
+
+PAGE_VIEW_LOG_INCLUDES_ANONYMOUS = getattr(settings, 'PAGE_VIEW_LOG_INCLUDES_ANONYMOUS', False)
+
 class UserAgent(models.Model):
     user_agent_hash = models.CharField(max_length=32, db_index=True)
     user_agent_string = models.TextField()
@@ -39,8 +42,8 @@ class ViewName(models.Model):
 
 class PageViewLog(models.Model):
     datetime = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='page_view_logs', on_delete=models.CASCADE)
-    session_key = models.CharField(max_length=32)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='page_view_logs', on_delete=models.CASCADE, null=True, blank=True)
+    session_key = models.CharField(max_length=32, null=True, blank=True)
     ip_address = models.CharField(max_length=15)
     user_agent = models.ForeignKey(UserAgent, on_delete=models.CASCADE)
 
