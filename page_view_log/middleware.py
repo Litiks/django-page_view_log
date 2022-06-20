@@ -21,14 +21,15 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
         request.pvl_view_name = ''
 
         # 'cache' the result of this page, to use as the result for any other page request that comes in during its generation.
-        mystr = "{0}:{1}:{2}:{3}:{4}:{5}".format(
+        mystr = ":".join(str(obj) for obj in [
             request.session.session_key,
             request.user,
+            request.META.get('HTTP_AUTHORIZATION'),
             request.META.get('PATH_INFO'),
             request.META.get('QUERY_STRING'),
             json.dumps(request.POST),
             request.is_ajax(),
-            )
+            ])
         request.pvl_uid = hashlib.md5(mystr.encode('utf-8')).hexdigest()
 
         # Try to call dibs on this work
