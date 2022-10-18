@@ -28,7 +28,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             request.META.get('PATH_INFO'),
             request.META.get('QUERY_STRING'),
             json.dumps(request.POST),
-            request.is_ajax(),
+            request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest',  # replaces `request.is_ajax()`
             ])
         request.pvl_uid = hashlib.md5(mystr.encode('utf-8')).hexdigest()
 
