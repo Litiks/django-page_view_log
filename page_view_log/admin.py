@@ -81,6 +81,19 @@ class PageViewLogAdmin(admin.ModelAdmin):
                 found_something = True
                 qs = qs.filter(view_name_id__in=view_name_ids)
 
+            # user_agent__user_agent_hash
+            user_agents = UserAgent.objects.filter(user_agent_hash=word)
+            user_agent_ids = list(user_agents.values_list('pk', flat=True))
+            if user_agent_ids:
+                found_something = True
+                qs = qs.filter(user_agent_id__in=user_agent_ids)
+
+            # ip_address
+            qs_filtered_by_ip = qs.filter(ip_address=word)
+            if qs_filtered_by_ip:
+                found_something = True
+                qs = qs_filtered_by_ip
+
             if not found_something:
                 # There are no results for this word. That's it. We're done.
                 return queryset.none(), False
