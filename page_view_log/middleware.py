@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 import hashlib
 import json
 import time
-from datetime import datetime
 
 from django.core.cache import cache
 from django.utils import timezone
@@ -13,7 +12,8 @@ except ImportError:
     class MiddlewareMixin(object):
         pass
 
-from page_view_log.models import UserAgent, Url, ViewName, PageViewLog
+from page_view_log.models import UserAgent, Url, ViewName, PageViewLog, PAGE_VIEW_LOG_INCLUDES_ANONYMOUS
+
 
 class PageViewLogMiddleware(MiddlewareMixin, object):
     def process_request(self, request):
@@ -21,14 +21,15 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
         request.pvl_view_name = ''
 
         # 'cache' the result of this page, to use as the result for any other page request that comes in during its generation.
-        mystr = "{0}:{1}:{2}:{3}:{4}:{5}".format(
+        mystr = ":".join(str(obj) for obj in [
             request.session.session_key,
             request.user,
+            request.META.get('HTTP_AUTHORIZATION'),
             request.META.get('PATH_INFO'),
             request.META.get('QUERY_STRING'),
             json.dumps(request.POST),
-            request.is_ajax(),
-            )
+            request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest',  # replaces `request.is_ajax()`
+            ])
         request.pvl_uid = hashlib.md5(mystr.encode('utf-8')).hexdigest()
 
         # Try to call dibs on this work
@@ -37,7 +38,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             # Wait for the other process to complete.
             stime = time.time()
             while cache.get(request.pvl_uid):
-                time.sleep(.01)
+                time.sleep(0.2)
                 if time.time() > (stime + 60):
                     # it's been 60 seconds. time to give up on waiting and process as normal.
                     return None
@@ -60,11 +61,11 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             gen_time = None
 
         try:
-            id = int(request.user.id)
+            user_id = int(request.user.id)
         except:
-            #we don't care about unauthed requests
-            pass
-        else:
+            user_id = None
+
+        if user_id or PAGE_VIEW_LOG_INCLUDES_ANONYMOUS:
             # ip_address
             ip_address = request.META['REMOTE_ADDR']
             if request.META.get('HTTP_CF_CONNECTING_IP'):
@@ -131,7 +132,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
 
             try:
                 PageViewLog.objects.create(
-                    user_id = request.user.id,
+                    user_id = user_id,
                     session_key = request.session.session_key,
                     ip_address = ip_address,
                     user_agent_id = user_agent_id,
