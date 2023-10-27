@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
 import hashlib
 import json
+import re
 import time
 
+from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
@@ -15,37 +17,54 @@ except ImportError:
 from page_view_log.models import UserAgent, Url, ViewName, PageViewLog, PAGE_VIEW_LOG_INCLUDES_ANONYMOUS
 
 
+PAGE_VIEW_LOG_NO_DIBS_PATHS = getattr(settings, 'PAGE_VIEW_LOG_NO_DIBS_PATHS') or []
+
+
 class PageViewLogMiddleware(MiddlewareMixin, object):
     def process_request(self, request):
         request.pvl_stime = timezone.now()
         request.pvl_view_name = ''
 
-        # 'cache' the result of this page, to use as the result for any other page request that comes in during its generation.
-        mystr = ":".join(str(obj) for obj in [
-            request.session.session_key,
-            request.user,
-            request.META.get('HTTP_AUTHORIZATION'),
-            request.META.get('PATH_INFO'),
-            request.META.get('QUERY_STRING'),
-            json.dumps(request.POST),
-            str(request.body),
-            request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest',  # replaces `request.is_ajax()`
-            ])
-        request.pvl_uid = hashlib.md5(mystr.encode('utf-8')).hexdigest()
+        # determine if the `dibs` feature should be disabled
+        skip_dibs = True
+        for test in PAGE_VIEW_LOG_NO_DIBS_PATHS:
+            if isinstance(test, re.Pattern):
+                if test.search(request.path):
+                    break
+            elif isinstance(test, str):
+                if test == request.path:
+                    break
+            else:
+                raise Exception('Not sure how to handle PAGE_VIEW_LOG_NO_DIBS_PATHS test')
+        else:
+            skip_dibs = False
 
-        # Try to call dibs on this work
-        dibsed = cache.add(request.pvl_uid, "in progress", 60)   # returns False if this key already has a value (someone else has dibsed it)
-        if not dibsed:
-            # Wait for the other process to complete.
-            stime = time.time()
-            while cache.get(request.pvl_uid):
-                time.sleep(0.2)
-                if time.time() > (stime + 60):
-                    # it's been 60 seconds. time to give up on waiting and process as normal.
-                    return None
+        if skip_dibs:
+            # 'cache' the result of this page, to use as the result for any other page request that comes in during its generation.
+            mystr = ":".join(str(obj) for obj in [
+                request.session.session_key,
+                request.user,
+                request.META.get('HTTP_AUTHORIZATION'),
+                request.META.get('PATH_INFO'),
+                request.META.get('QUERY_STRING'),
+                json.dumps(request.POST),
+                request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest',  # replaces `request.is_ajax()`
+                ])
+            request.pvl_uid = hashlib.md5(mystr.encode('utf-8')).hexdigest()
 
-            # Don't bother processing. Just return the same response as the last request.
-            return cache.get(request.pvl_uid + ":response")
+            # Try to call dibs on this work
+            dibsed = cache.add(request.pvl_uid, "in progress", 60)   # returns False if this key already has a value (someone else has dibsed it)
+            if not dibsed:
+                # Wait for the other process to complete.
+                stime = time.time()
+                while cache.get(request.pvl_uid):
+                    time.sleep(0.2)
+                    if time.time() > (stime + 60):
+                        # it's been 60 seconds. time to give up on waiting and process as normal.
+                        return None
+
+                # Don't bother processing. Just return the same response as the last request.
+                return cache.get(request.pvl_uid + ":response")
 
         return None
 
