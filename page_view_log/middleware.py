@@ -39,7 +39,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
         else:
             skip_dibs = False
 
-        if skip_dibs:
+        if not skip_dibs:
             # 'cache' the result of this page, to use as the result for any other page request that comes in during its generation.
             mystr = ":".join(str(obj) for obj in [
                 request.session.session_key,
