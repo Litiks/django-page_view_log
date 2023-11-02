@@ -22,3 +22,22 @@ Integrate
 1. Add 'page_view_log' to your settings.INSTALLED_APPS
 2. Add `'page_view_log.middleware.PageViewLogMiddleware',` to your settings.MIDDLEWARE_CLASSES, after django's built-in middleware.
 3. Add `PAGE_VIEW_LOG_INCLUDES_ANONYMOUS = True` if PageViewLog.user should allow None.
+4. Add `PAGE_VIEW_LOG_NO_DIBS_PATHS = [*path_patterns]` to skip the dibs logic when path matches a given string (exactly) or regular expression
+
+
+Example
+-------
+
+```python
+# settings.py
+
+import re
+
+INSTALLED_APPS = [..., 'page_view_log', ...]
+MIDDLEWARE_CLASSES = [..., 'page_view_log.middleware.PageViewLogMiddleware', ...]
+PAGE_VIEW_LOG_INCLUDES_ANONYMOUS = True
+PAGE_VIEW_LOG_NO_DIBS_PATHS = [
+    '/api/',               # exact, i.e. doesn't match '/api/get_user/'
+    re.compile('^/api/'),  # starts with
+]
+```
