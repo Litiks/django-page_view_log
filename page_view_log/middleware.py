@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
 import hashlib
 import json
+import re
 import time
 
+from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
@@ -15,10 +17,25 @@ except ImportError:
 from page_view_log.models import UserAgent, Url, ViewName, PageViewLog, PAGE_VIEW_LOG_INCLUDES_ANONYMOUS
 
 
+PAGE_VIEW_LOG_NO_DIBS_PATHS = getattr(settings, 'PAGE_VIEW_LOG_NO_DIBS_PATHS') or []
+
+
 class PageViewLogMiddleware(MiddlewareMixin, object):
     def process_request(self, request):
         request.pvl_stime = timezone.now()
         request.pvl_view_name = ''
+
+        # determine if the `dibs` feature should be disabled
+        skip_dibs = True
+        for test in PAGE_VIEW_LOG_NO_DIBS_PATHS:
+            if isinstance(test, re.Pattern):
+                if test.search(request.path):
+                    return
+            elif isinstance(test, str):
+                if test == request.path:
+                    return
+            else:
+                raise Exception('Not sure how to handle PAGE_VIEW_LOG_NO_DIBS_PATHS test')
 
         # 'cache' the result of this page, to use as the result for any other page request that comes in during its generation.
         mystr = ":".join(str(obj) for obj in [
