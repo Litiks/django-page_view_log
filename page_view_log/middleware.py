@@ -15,9 +15,10 @@ except ImportError:
         pass
 
 from page_view_log.models import UserAgent, Url, ViewName, PageViewLog, PAGE_VIEW_LOG_INCLUDES_ANONYMOUS
-
+from page_view_log.utils import page_view_log_queue
 
 PAGE_VIEW_LOG_NO_DIBS_PATHS = getattr(settings, 'PAGE_VIEW_LOG_NO_DIBS_PATHS', None) or []
+PAGE_VIEW_LOG_FLUSH_IN_BATCHES = bool(getattr(settings, 'PAGE_VIEW_LOG_FLUSH_IN_BATCHES', None))
 
 
 class PageViewLogMiddleware(MiddlewareMixin, object):
@@ -147,20 +148,43 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
                 view_name_id = view_name.id
                 cache.set(cache_key, view_name_id)
 
-            try:
-                PageViewLog.objects.create(
-                    user_id = user_id,
-                    session_key = request.session.session_key,
-                    ip_address = ip_address,
-                    user_agent_id = user_agent_id,
+            pvl = PageViewLog(
+                datetime = timezone.now(),
+                user_id = user_id,
+                session_key = request.session.session_key,
+                ip_address = ip_address,
+                user_agent_id = user_agent_id,
 
-                    url_id = url_id,
-                    view_name_id = view_name_id,
-                    gen_time = gen_time,
-                    status_code = response.status_code,
-                    )
-            except Exception as e:
-                print("An error occurred saving the PageViewLog: '{}'".format(e))
+                url_id = url_id,
+                view_name_id = view_name_id,
+                gen_time = gen_time,
+                status_code = response.status_code,
+                )
+
+            if PAGE_VIEW_LOG_FLUSH_IN_BATCHES:
+                # We want to 'flush' to the database in batches.
+                # For tables like innodb; each database insert requires an fsync(), which can be slow.
+                # So there's a performance benefit to inserting records in bulk.
+                #
+                # ex:
+                # Time to insert 100 records individually:
+                # 100 * 5ms = 500ms
+                #
+                # Time to insert 100 records simultaneously:
+                # 6ms
+
+                # A couple things to watch out for:
+                # - Insertion order is no longer chronological order. (One worker / thread may flush before another)
+                #    - Order results by datetime, if this is an issue.
+                # - It's possible that the last few logs will never be flushed (in the event of a server shutdown)
+                page_view_log_queue.append(pvl)
+                page_view_log_queue.conditional_flush()
+            else:
+                # Save to the database immediately
+                try:
+                    pvl.save()
+                except Exception as e:
+                    print("An error occurred saving the PageViewLog: '{}'".format(e))
 
         # we've finished processing this request, let's cache it in case any other thread is waiting for it.
         if hasattr(request,'pvl_uid'):

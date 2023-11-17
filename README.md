@@ -23,6 +23,7 @@ Integrate
 2. Add `'page_view_log.middleware.PageViewLogMiddleware',` to your settings.MIDDLEWARE_CLASSES, after django's built-in middleware.
 3. Add `PAGE_VIEW_LOG_INCLUDES_ANONYMOUS = True` if PageViewLog.user should allow None.
 4. Add `PAGE_VIEW_LOG_NO_DIBS_PATHS = [*path_patterns]` to skip the dibs logic when path matches a given string (exactly) or regular expression
+5. Add `PAGE_VIEW_LOG_FLUSH_IN_BATCHES = True`, for an improvement to DB inserts, at the risk of losing the last few logs at server shutdown.
 
 
 Example
@@ -40,4 +41,5 @@ PAGE_VIEW_LOG_NO_DIBS_PATHS = [
     '/api/',               # exact, i.e. doesn't match '/api/get_user/'
     re.compile('^/api/'),  # starts with
 ]
+PAGE_VIEW_LOG_FLUSH_IN_BATCHES = True
 ```

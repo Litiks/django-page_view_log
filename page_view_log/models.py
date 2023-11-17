@@ -42,7 +42,7 @@ class ViewName(models.Model):
         return self.__str__()
 
 class PageViewLog(models.Model):
-    datetime = models.DateTimeField(auto_now_add=True)
+    datetime = models.DateTimeField()
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='page_view_logs', on_delete=models.CASCADE, null=True, blank=True)
     session_key = models.CharField(max_length=32, null=True, blank=True)
     ip_address = models.CharField(max_length=15)
