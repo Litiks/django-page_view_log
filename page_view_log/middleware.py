@@ -17,7 +17,7 @@ except ImportError:
 from page_view_log.models import UserAgent, Url, ViewName, PageViewLog, PAGE_VIEW_LOG_INCLUDES_ANONYMOUS
 
 
-PAGE_VIEW_LOG_NO_DIBS_PATHS = getattr(settings, 'PAGE_VIEW_LOG_NO_DIBS_PATHS') or []
+PAGE_VIEW_LOG_NO_DIBS_PATHS = getattr(settings, 'PAGE_VIEW_LOG_NO_DIBS_PATHS', None) or []
 
 
 class PageViewLogMiddleware(MiddlewareMixin, object):
