@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 from datetime import timedelta
 
 from django.db import models
+from django.db.utils import IntegrityError
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
@@ -114,20 +115,37 @@ def cleanup_old_logs(**kwargs):
     used_ids = PageViewLog.objects.values_list('user_agent_id', flat=True).distinct()
     ids_to_delete = set(all_ids) - set(used_ids)
     qs = UserAgent.objects.filter(id__in=ids_to_delete)
-    qs._raw_delete(qs.db)
+    try:
+        qs._raw_delete(qs.db)
+    except IntegrityError:
+        pass
 
     # remove orphan Urls
     all_ids = Url.objects.all().values_list('id', flat=True)
     used_ids = PageViewLog.objects.values_list('url_id', flat=True).distinct()
     ids_to_delete = set(all_ids) - set(used_ids)
-    qs = Url.objects.filter(id__in=ids_to_delete)
-    qs._raw_delete(qs.db)
+    for i in range(10**4):
+        # There could be a lot of these!
+        # we delete them 1000 at a time, to avoid needing a big lock on this table.
+        selected_ids = list(ids_to_delete)[:1000]
+        if not selected_ids:
+            # we're all done.
+            break
+        qs = Url.objects.filter(id__in=selected_ids)
+        try:
+            qs._raw_delete(qs.db)
+        except IntegrityError:
+            pass
+        ids_to_delete -= set(selected_ids)
 
     # remove orphan ViewNames
     all_ids = ViewName.objects.all().values_list('id', flat=True)
     used_ids = PageViewLog.objects.values_list('view_name_id', flat=True).distinct()
     ids_to_delete = set(all_ids) - set(used_ids)
     qs = ViewName.objects.filter(id__in=ids_to_delete)
-    qs._raw_delete(qs.db)
+    try:
+        qs._raw_delete(qs.db)
+    except IntegrityError:
+        pass
 
 cron_daily.connect(cleanup_old_logs, dispatch_uid="cleanup_old_logs")
