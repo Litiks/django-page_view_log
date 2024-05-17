@@ -15,7 +15,7 @@ except ImportError:
         pass
 
 from page_view_log.models import UserAgent, Url, ViewName, PageViewLog, PAGE_VIEW_LOG_INCLUDES_ANONYMOUS
-from page_view_log.utils import page_view_log_queue
+from page_view_log.utils import page_view_log_queue, my_lru_cache
 
 PAGE_VIEW_LOG_NO_DIBS_PATHS = getattr(settings, 'PAGE_VIEW_LOG_NO_DIBS_PATHS', None) or []
 PAGE_VIEW_LOG_FLUSH_IN_BATCHES = bool(getattr(settings, 'PAGE_VIEW_LOG_FLUSH_IN_BATCHES', None))
@@ -95,7 +95,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
             user_agent_string = request.META.get('HTTP_USER_AGENT') or ''
             user_agent_hash = hashlib.md5(user_agent_string.encode('utf-8')).hexdigest()
             cache_key = "pvl_%s" % user_agent_hash
-            user_agent_id = cache.get(cache_key)
+            user_agent_id = my_lru_cache.get(cache_key)
             if not user_agent_id:
                 # get or create it from the db
                 user_agents = UserAgent.objects.filter(user_agent_hash=user_agent_hash)[:1]
@@ -108,13 +108,13 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
                         user_agent_string = user_agent_string,
                         )
                 user_agent_id = user_agent.id
-                cache.set(cache_key, user_agent_id)
+                my_lru_cache.set(cache_key, user_agent_id)
 
             # url
             url_string = request.META.get('PATH_INFO') or ''
             url_hash = hashlib.md5(url_string.encode('utf-8')).hexdigest()
             cache_key = "pvl_%s" % url_hash
-            url_id = cache.get(cache_key)
+            url_id = my_lru_cache.get(cache_key)
             if not url_id:
                 # get or create it from the db
                 urls = Url.objects.filter(url_hash = url_hash)[:1]
@@ -127,13 +127,13 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
                         url_string = url_string,
                         )
                 url_id = url.id
-                cache.set(cache_key, url_id)
+                my_lru_cache.set(cache_key, url_id)
 
             # view_name
             view_name_string = getattr(request,'pvl_view_name','')
             view_name_hash = hashlib.md5(view_name_string.encode('utf-8')).hexdigest()
             cache_key = "pvl_%s" % view_name_hash
-            view_name_id = cache.get(cache_key)
+            view_name_id = my_lru_cache.get(cache_key)
             if not view_name_id:
                 # get or create it from the db
                 view_names = ViewName.objects.filter(view_name_hash=view_name_hash)[:1]
@@ -146,7 +146,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
                         view_name_string = view_name_string,
                         )
                 view_name_id = view_name.id
-                cache.set(cache_key, view_name_id)
+                my_lru_cache.set(cache_key, view_name_id)
 
             pvl = PageViewLog(
                 datetime = timezone.now(),
