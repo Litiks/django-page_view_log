@@ -62,6 +62,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
                     return None
 
             # Don't bother processing. Just return the same response as the last request.
+            # Note that if this get returns nothing, we'll just revert to processing as usual.
             return cache.get(request.pvl_uid + ":response")
 
         return None
@@ -188,10 +189,16 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
 
         # we've finished processing this request, let's cache it in case any other thread is waiting for it.
         if hasattr(request,'pvl_uid'):
-            try:
-                cache.set(request.pvl_uid + ":response", response, 10)
-            except:
-                # some responses can't be pickled / cast to string. So we just fail gracefully
-                pass
-            cache.delete(request.pvl_uid)      # this tells the other thread that we're done.
+
+            # Note: we only store the response if it took more than 2 seconds to generate.
+            # If it took less time than that; it's unlikely that the client has retried in their impatience.
+            if gen_time and gen_time > 2000000:  # 2 seconds
+                try:
+                    cache.set(request.pvl_uid + ":response", response, 10)
+                except:
+                    # some responses can't be pickled / cast to string. So we just fail gracefully
+                    pass
+
+            # this tells any other threads that we're done.
+            cache.delete(request.pvl_uid)
         return response
