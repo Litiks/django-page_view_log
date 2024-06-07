@@ -51,8 +51,8 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
         request.pvl_uid = hashlib.md5(mystr.encode('utf-8')).hexdigest()
 
         # Try to call dibs on this work
-        dibsed = cache.add(request.pvl_uid, "in progress", 60)   # returns False if this key already has a value (someone else has dibsed it)
-        if not dibsed:
+        request.dibsed = cache.add(request.pvl_uid, "in progress", 60)   # returns False if this key already has a value (someone else has dibsed it)
+        if not request.dibsed:
             # Wait for the other process to complete.
             stime = time.time()
             while cache.get(request.pvl_uid):
@@ -192,7 +192,7 @@ class PageViewLogMiddleware(MiddlewareMixin, object):
 
             # Note: we only store the response if it took more than 2 seconds to generate.
             # If it took less time than that; it's unlikely that the client has retried in their impatience.
-            if gen_time and gen_time > 2000000:  # 2 seconds
+            if getattr(request,'dibsed') and gen_time and gen_time > 2000000:  # 2 seconds
                 try:
                     cache.set(request.pvl_uid + ":response", response, 10)
                 except:
