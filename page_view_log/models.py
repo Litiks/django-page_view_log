@@ -78,7 +78,7 @@ def cleanup_old_logs(**kwargs):
     cutoff = timezone.now() - timedelta(days=90)
     for i in range(10**4):
         # we delete them 1000 at a time, to avoid needing a big lock on this table.
-        qs = PageViewLog.objects.filter(id__lt=earliest_id + 1000).values_list('id', 'datetime')
+        qs = PageViewLog.objects.filter(id__lt=earliest_id + 1000).values_list('id', 'datetime')[:1000]
         qs = list(qs)
 
         if not qs:
