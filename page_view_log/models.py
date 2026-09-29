@@ -9,6 +9,12 @@ from django.utils import timezone
 
 from cron.signals import cron_daily
 
+try:
+    from remote_job.signals import jobber
+    HAS_JOBBER=True
+except ImportError:
+    HAS_JOBBER=False
+
 
 PAGE_VIEW_LOG_INCLUDES_ANONYMOUS = getattr(settings, 'PAGE_VIEW_LOG_INCLUDES_ANONYMOUS', False)
 
@@ -148,4 +154,21 @@ def cleanup_old_logs(**kwargs):
     except IntegrityError:
         pass
 
-cron_daily.connect(cleanup_old_logs, dispatch_uid="cleanup_old_logs")
+
+if HAS_JOBBER:
+    # Use cron_daily to dispatch a background job.
+    jobber.connect(
+        cleanup_old_logs,
+        name="page_view_log:cleanup_old_logs",
+        dispatch_uid="page_view_log:cleanup_old_logs",
+        expected_speed="slow",
+        server_size="large",
+        is_safe_to_interrupt=True,
+    )
+    def trigger_cleanup_old_logs():
+        jobber.send(name="page_view_log:cleanup_old_logs")
+    cron_daily.connect(trigger_cleanup_old_logs, dispatch_uid="cleanup_old_logs")
+
+else:
+    # Run the job within cron_daily
+    cron_daily.connect(cleanup_old_logs, dispatch_uid="cleanup_old_logs")
